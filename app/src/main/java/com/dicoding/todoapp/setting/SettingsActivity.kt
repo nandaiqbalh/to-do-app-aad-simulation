@@ -6,11 +6,14 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import androidx.work.Data
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.OneTimeWorkRequest
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.dicoding.todoapp.R
 import com.dicoding.todoapp.notification.NotificationWorker
 import com.dicoding.todoapp.utils.NOTIFICATION_CHANNEL_ID
+import java.util.concurrent.TimeUnit
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -34,13 +37,17 @@ class SettingsActivity : AppCompatActivity() {
             prefNotification?.setOnPreferenceChangeListener { preference, newValue ->
                 val channelName = getString(R.string.notify_channel_name)
                 //TODO 13 : Schedule and cancel daily reminder using WorkManager with data channelName
-                val workManager = WorkManager.getInstance(requireContext())
-                val value = newValue as Boolean
-                lateinit var oneTimeWorkRequest: OneTimeWorkRequest
-                if (value){
-                    val data = Data.Builder().putString(NOTIFICATION_CHANNEL_ID,channelName).build()
-                    oneTimeWorkRequest = OneTimeWorkRequest.Builder(NotificationWorker::class.java).setInputData(data).build()
-                    workManager.enqueue(oneTimeWorkRequest)
+                val notificationWorkRequest = PeriodicWorkRequestBuilder<NotificationWorker>(1, TimeUnit.DAYS)
+                    .addTag(channelName)
+                    .build()
+
+                val myWorkManager = WorkManager.getInstance(requireContext())
+                if(newValue as Boolean){
+                    myWorkManager.enqueueUniquePeriodicWork(channelName, ExistingPeriodicWorkPolicy.REPLACE, notificationWorkRequest)
+                }
+                else{
+                    myWorkManager.cancelAllWorkByTag(channelName)
+                    myWorkManager.pruneWork()
                 }
                 true
             }

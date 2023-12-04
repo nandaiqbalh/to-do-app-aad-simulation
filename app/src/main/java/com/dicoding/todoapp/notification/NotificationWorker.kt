@@ -30,7 +30,7 @@ class NotificationWorker(ctx: Context, params: WorkerParameters) : Worker(ctx, p
         }
         return TaskStackBuilder.create(applicationContext).run {
             addNextIntentWithParentStack(intent)
-            getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
+            getPendingIntent(0, PendingIntent.FLAG_IMMUTABLE)
         }
     }
 
